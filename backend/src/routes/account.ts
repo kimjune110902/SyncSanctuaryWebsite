@@ -43,7 +43,7 @@ export default async function accountRoutes(fastify: FastifyInstance) {
       rawToken = request.headers.authorization.substring(7);
     }
 
-    const mappedSessions = sessions.map(s => ({
+    const mappedSessions = sessions.map((s: any) => ({
       ...s,
       is_current: false // Simplification: missing token hashing verification for this demo
     }));
@@ -79,5 +79,69 @@ export default async function accountRoutes(fastify: FastifyInstance) {
     });
 
     return reply.code(200).send({ success: true });
+  });
+
+
+  fastify.post('/change-password', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    const { verifyPassword, hashPassword } = await import('../utils/hash.js');
+    const schema = z.object({
+      current_password: z.string(),
+      new_password: z.string().min(10)
+    });
+
+    const body = schema.parse(request.body);
+    const user = await fastify.prisma.users.findUnique({ where: { id: request.user.sub } });
+
+    if (!user || !user.password_hash) {
+      return reply.code(400).send({ error: 'INVALID_USER' });
+    }
+
+    const isValid = await verifyPassword(user.password_hash, body.current_password);
+    if (!isValid) {
+      return reply.code(401).send({ error: 'INVALID_CURRENT_PASSWORD' });
+    }
+
+    const newHash = await hashPassword(body.new_password);
+
+    await fastify.prisma.$transaction(async (prisma) => {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { password_hash: newHash }
+      });
+
+      let rawToken = request.cookies.ss_refresh_token;
+      if (!rawToken && request.headers.authorization?.startsWith('Bearer ')) {
+          rawToken = request.headers.authorization.substring(7);
+      }
+
+      let currentTokenHash = '';
+      if (rawToken) {
+          const crypto = await import('crypto');
+          currentTokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+      }
+
+      await prisma.refresh_tokens.updateMany({
+        where: {
+            user_id: user.id,
+            revoked: false,
+            token_hash: { not: currentTokenHash }
+        },
+        data: {
+            revoked: true,
+            revoked_reason: 'password_change',
+            revoked_at: new Date()
+        }
+      });
+    });
+
+    return reply.code(200).send({ success: true });
+  });
+
+  fastify.post('/avatar/upload-url', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    // Dummy implementation for presigned S3 url
+    return reply.code(200).send({
+      upload_url: 'https://dummy-s3-presigned-url',
+      public_url: `https://cdn.syncsanctuary.app/avatars/${request.user.sub}/avatar.webp`
+    });
   });
 }
