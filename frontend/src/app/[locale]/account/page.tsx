@@ -2,19 +2,25 @@
 import React, { useState, useEffect } from 'react';
 import Navigation from '../../../components/Navigation';
 import { useAuthStore } from '../../../store/auth';
+import AvatarUploadModal from '../../../components/AvatarUploadModal';
 
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const { user, login } = useAuthStore();
 
   const [username, setUsername] = useState(user?.username || '');
+  const [emailForm, setEmailForm] = useState(user?.email || '');
   const [passwordForm, setPasswordForm] = useState({ current_password: '', new_password: '', confirm_password: '' });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [sessions, setSessions] = useState<any[]>([]);
   const [message, setMessage] = useState({ type: '', text: '' });
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   useEffect(() => {
-    if (user) setUsername(user.username);
+    if (user) {
+      setUsername(user.username);
+      setEmailForm(user.email || '');
+    }
   }, [user]);
 
   useEffect(() => {
@@ -45,6 +51,58 @@ export default function AccountPage() {
         setMessage({ type: 'success', text: 'Username updated successfully.' });
       } else {
         setMessage({ type: 'error', text: data.error });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    }
+  };
+
+  const handleAddOrChangeEmail = async () => {
+    try {
+      const res = await fetch('/api/v1/account/email/add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().accessToken}`
+        },
+        body: JSON.stringify({ email: emailForm })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Verification email sent. Please check your inbox.' });
+      } else {
+        setMessage({ type: 'error', text: data.error });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    }
+  };
+
+  const handleRemoveEmail = async () => {
+    try {
+      const res = await fetch('/api/v1/account/email/remove', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${useAuthStore.getState().accessToken}`
+        }
+      });
+      if (res.ok) {
+        setEmailForm('');
+        setMessage({ type: 'success', text: 'Email removed successfully.' });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    }
+  };
+
+  const handleDataExport = async () => {
+    try {
+      const res = await fetch('/api/v1/account/data-export', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${useAuthStore.getState().accessToken}` }
+      });
+      if (res.ok) {
+        setMessage({ type: 'success', text: 'Export requested — check your email within 5 minutes.' });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error' });
@@ -110,10 +168,14 @@ export default function AccountPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${useAuthStore.getState().accessToken}`
-        }
+        },
+        body: JSON.stringify({ password: pwd })
       });
       if (res.ok) {
         window.location.href = '/';
+      } else {
+        const data = await res.json();
+        setMessage({ type: 'error', text: data.error });
       }
     } catch {
       setMessage({ type: 'error', text: 'Network error' });
@@ -157,10 +219,15 @@ export default function AccountPage() {
               <div className="mb-8">
                 <label className="block text-sm font-medium mb-2">Avatar</label>
                 <div className="flex items-center space-x-4">
-                  <div className="w-20 h-20 bg-brand-200 rounded-full flex items-center justify-center text-brand-800 text-xl font-bold">
-                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  <div className="w-20 h-20 bg-brand-200 rounded-full flex items-center justify-center text-brand-800 text-xl font-bold overflow-hidden">
+                    {user?.avatar_url ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={user.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      user?.username?.charAt(0).toUpperCase() || 'U'
+                    )}
                   </div>
-                  <button onClick={() => setMessage({ type: 'success', text: 'Avatar upload mock executed.' })} className="px-4 py-2 border border-border-default rounded text-sm font-medium hover:bg-bg-muted">Change avatar</button>
+                  <button onClick={() => setIsAvatarModalOpen(true)} className="px-4 py-2 border border-border-default rounded text-sm font-medium hover:bg-bg-muted">Change avatar</button>
                 </div>
               </div>
 
@@ -178,13 +245,23 @@ export default function AccountPage() {
                 </div>
               </div>
 
+              <div className="mb-6 max-w-md">
+                <label className="block text-sm font-medium mb-2">Email Address</label>
+                <div className="flex flex-col space-y-2">
+                   <input type="email" className="w-full border border-border-default p-2 rounded text-text-primary bg-bg-surface" value={emailForm} onChange={e => setEmailForm(e.target.value)} placeholder="Email address" />
+                   <div className="flex space-x-2">
+                     <button onClick={handleAddOrChangeEmail} className="px-4 py-2 bg-brand-600 text-white rounded text-sm font-medium">{user?.email ? 'Change Email' : 'Add Email'}</button>
+                     {user?.email && <button onClick={handleRemoveEmail} className="px-4 py-2 text-status-danger-text border border-status-danger-border rounded text-sm font-medium hover:bg-status-danger-bg">Remove Email</button>}
+                   </div>
+                </div>
+              </div>
+
             </div>
           )}
 
           {activeTab === 'security' && (
              <div>
                <h3 className="text-xl font-bold mb-6">Security</h3>
-               {/* Password change form */}
                <form onSubmit={handleChangePassword} className="mb-8 max-w-md">
                  <h4 className="text-sm font-medium mb-4">Change Password</h4>
                  <div className="space-y-4">
@@ -212,6 +289,14 @@ export default function AccountPage() {
              </div>
           )}
 
+          {activeTab === 'your_data' && (
+            <div>
+               <h3 className="text-xl font-bold mb-6">Your Data</h3>
+               <p className="text-text-secondary mb-6">You have the right to receive a copy of all personal data we hold about you.</p>
+               <button onClick={handleDataExport} className="px-4 py-2 bg-brand-600 text-white rounded text-sm font-medium">Request data export</button>
+            </div>
+          )}
+
           {activeTab === 'danger_zone' && (
              <div>
                 <h3 className="text-xl font-bold mb-6 text-status-danger-text">Danger Zone</h3>
@@ -220,8 +305,8 @@ export default function AccountPage() {
              </div>
           )}
 
-          {/* Placeholders for remaining tabs to pass functional check */}
-          {(activeTab === 'preferences' || activeTab === 'your_data') && (
+          {/* Placeholders for remaining tabs */}
+          {(activeTab === 'preferences') && (
             <div>
                <h3 className="text-xl font-bold mb-6 capitalize">{activeTab.replace('_', ' ')}</h3>
                <p className="text-text-secondary mb-4">Feature not implemented in this milestone.</p>
@@ -231,6 +316,15 @@ export default function AccountPage() {
 
         </main>
       </div>
+
+      <AvatarUploadModal
+        isOpen={isAvatarModalOpen}
+        onClose={() => setIsAvatarModalOpen(false)}
+        onUploadSuccess={(url) => {
+            if(user) login({...user, avatar_url: url}, useAuthStore.getState().accessToken!);
+            setMessage({ type: 'success', text: 'Avatar updated successfully!' });
+        }}
+      />
     </div>
   );
 }
