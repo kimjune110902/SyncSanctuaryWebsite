@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { hashPassword, verifyPassword } from '../utils/hash.js';
-import { generateAccessToken } from '../utils/jwt.js';
+import { generateAccessToken, verifyAccessToken } from '../utils/jwt.js';
 import redis from '../utils/redis.js';
 import { sendSMS } from '../utils/sms.js';
 import crypto from 'crypto';
@@ -77,8 +77,25 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
   // 3. Create Account
   fastify.post('/signup/create-account', async (request, reply) => {
-    const body: any = request.body;
-    if (!body.phone_verified_token) return reply.code(401).send({ error: 'PHONE_TOKEN_INVALID' });
+    const schema = z.object({
+      phone_verified_token: z.string(),
+      username: z.string().min(3).max(32),
+      password: z.string().min(10),
+      email: z.string().email().optional().nullable(),
+      locale: z.string().optional(),
+      consent: z.any().optional(),
+      client_type: z.string().optional()
+    });
+
+    const body = schema.parse(request.body);
+
+    let phoneNumber = '';
+    try {
+       const decoded = verifyAccessToken(body.phone_verified_token);
+       phoneNumber = decoded.sub;
+    } catch {
+       return reply.code(401).send({ error: 'PHONE_TOKEN_INVALID' });
+    }
 
     const passwordHash = await hashPassword(body.password);
 
@@ -86,7 +103,7 @@ export default async function authRoutes(fastify: FastifyInstance) {
       const user = await fastify.prisma.users.create({
         data: {
           username: body.username,
-          phone_number: body.phone_number,
+          phone_number: phoneNumber,
           email: body.email,
           password_hash: passwordHash,
           phone_verified: true,
