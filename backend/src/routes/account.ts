@@ -277,4 +277,38 @@ export default async function accountRoutes(fastify: FastifyInstance) {
     });
     return reply.code(200).send({ success: true });
   });
+
+
+  fastify.patch('/preferences', { preValidation: [fastify.authenticate] }, async (request, reply) => {
+    const schema = z.object({
+      theme: z.enum(['light', 'dark', 'system']).optional(),
+      language: z.string().optional(),
+      notifications: z.object({
+        email: z.boolean().optional(),
+        sms: z.boolean().optional()
+      }).optional()
+    });
+
+    const body = schema.parse(request.body);
+
+    const user = await fastify.prisma.users.findUnique({ where: { id: request.user.sub } });
+    if (!user) return reply.code(400).send({ error: 'INVALID_USER' });
+
+    // Merge preferences
+    const existingPrefs = typeof user.preferences === 'object' && user.preferences !== null
+      ? user.preferences
+      : {};
+
+    const newPrefs = { ...existingPrefs, ...body };
+
+    const updateData: any = { preferences: newPrefs };
+    if (body.language) updateData.language = body.language;
+
+    const updatedUser = await fastify.prisma.users.update({
+      where: { id: request.user.sub },
+      data: updateData
+    });
+
+    return reply.code(200).send({ user: updatedUser });
+  });
 }

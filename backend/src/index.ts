@@ -7,6 +7,7 @@ import prismaPlugin from './plugins/prisma.js';
 import authPlugin from './plugins/auth.js';
 import cookie from '@fastify/cookie';
 import metricsPlugin from './plugins/metrics.js';
+import sentryPlugin from './plugins/sentry.js';
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/account.js';
 
@@ -20,6 +21,7 @@ fastify.register(rateLimit, {
   timeWindow: '1 minute'
 });
 
+fastify.register(sentryPlugin);
 fastify.register(metricsPlugin);
 fastify.register(prismaPlugin);
 fastify.register(authPlugin);

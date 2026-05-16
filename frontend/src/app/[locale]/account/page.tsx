@@ -16,10 +16,22 @@ export default function AccountPage() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
+  // Preferences state
+  const [prefs, setPrefs] = useState({ theme: 'system', language: 'en', notif_email: true, notif_sms: false });
+
   useEffect(() => {
     if (user) {
       setUsername(user.username);
       setEmailForm(user.email || '');
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const uprefs = (user as any).preferences || {};
+      setPrefs({
+        theme: uprefs.theme || 'system',
+        language: user.language || 'en',
+        notif_email: uprefs.notifications?.email ?? true,
+        notif_sms: uprefs.notifications?.sms ?? false
+      });
     }
   }, [user]);
 
@@ -182,6 +194,36 @@ export default function AccountPage() {
     }
   };
 
+  const handleUpdatePreferences = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('/api/v1/account/preferences', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${useAuthStore.getState().accessToken}`
+        },
+        body: JSON.stringify({
+          theme: prefs.theme,
+          language: prefs.language,
+          notifications: {
+            email: prefs.notif_email,
+            sms: prefs.notif_sms
+          }
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        login(data.user, useAuthStore.getState().accessToken!);
+        setMessage({ type: 'success', text: 'Preferences updated successfully.' });
+      } else {
+        setMessage({ type: 'error', text: data.error });
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Network error' });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-bg-base flex flex-col">
       <Navigation />
@@ -305,12 +347,42 @@ export default function AccountPage() {
              </div>
           )}
 
-          {/* Placeholders for remaining tabs */}
-          {(activeTab === 'preferences') && (
+          {activeTab === 'preferences' && (
             <div>
-               <h3 className="text-xl font-bold mb-6 capitalize">{activeTab.replace('_', ' ')}</h3>
-               <p className="text-text-secondary mb-4">Feature not implemented in this milestone.</p>
-               <button onClick={() => setMessage({ type: 'success', text: `Mock Action for ${activeTab} completed.` })} className="px-4 py-2 bg-brand-600 text-white rounded text-sm font-medium">Perform Action</button>
+               <h3 className="text-xl font-bold mb-6">Preferences</h3>
+               <form onSubmit={handleUpdatePreferences} className="space-y-6 max-w-md">
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Theme</label>
+                   <select className="w-full border border-border-default p-2 rounded text-text-primary bg-bg-surface" value={prefs.theme} onChange={e => setPrefs({...prefs, theme: e.target.value})}>
+                     <option value="system">System Default</option>
+                     <option value="light">Light Mode</option>
+                     <option value="dark">Dark Mode</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Language</label>
+                   <select className="w-full border border-border-default p-2 rounded text-text-primary bg-bg-surface" value={prefs.language} onChange={e => setPrefs({...prefs, language: e.target.value})}>
+                     <option value="en">English</option>
+                     <option value="ko">한국어 (Korean)</option>
+                     <option value="de">Deutsch (German)</option>
+                     <option value="es">Español (Spanish)</option>
+                     <option value="fr">Français (French)</option>
+                     <option value="ja">日本語 (Japanese)</option>
+                   </select>
+                 </div>
+                 <div>
+                   <label className="block text-sm font-medium mb-2">Notifications</label>
+                   <label className="flex items-center space-x-2 text-sm mb-2">
+                     <input type="checkbox" checked={prefs.notif_email} onChange={e => setPrefs({...prefs, notif_email: e.target.checked})} />
+                     <span>Receive product updates via email</span>
+                   </label>
+                   <label className="flex items-center space-x-2 text-sm">
+                     <input type="checkbox" checked={prefs.notif_sms} onChange={e => setPrefs({...prefs, notif_sms: e.target.checked})} />
+                     <span>Receive security alerts via SMS</span>
+                   </label>
+                 </div>
+                 <button type="submit" className="px-4 py-2 bg-brand-600 text-white rounded text-sm font-medium">Save preferences</button>
+               </form>
             </div>
           )}
 

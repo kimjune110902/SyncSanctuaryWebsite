@@ -29,6 +29,10 @@ jobs:
 
     - name: Build Frontend
       run: cd frontend && npm run build
+      env:
+        SENTRY_AUTH_TOKEN: "dummy"
+        SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
+        NEXT_PUBLIC_SENTRY_DSN: "dummy"
 
     - name: Playwright Tests
       run: cd frontend && npx playwright install chromium && npx playwright test --project=chromium
