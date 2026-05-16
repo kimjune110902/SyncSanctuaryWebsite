@@ -24,6 +24,14 @@ jobs:
     - name: Build Backend
       run: cd backend && npx prisma generate && npx tsc
 
+    - name: Start Backend Services
+      run: |
+        cd backend
+        npm run start &
+      env:
+        PORT: 8080
+        DATABASE_URL: "postgresql://dummy"
+
     - name: Install Frontend Dependencies
       run: cd frontend && npm install
 

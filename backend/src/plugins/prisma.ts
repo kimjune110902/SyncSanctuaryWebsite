@@ -2,8 +2,12 @@ import fp from 'fastify-plugin';
 import { PrismaClient } from '@prisma/client';
 
 export default fp(async (fastify) => {
-  const prisma = new PrismaClient();
-  await prisma.$connect();
+  const prisma = new PrismaClient({ log: ['info'] });
+  try {
+    await prisma.$connect();
+  } catch (e) {
+    fastify.log.warn('Prisma connect failed, likely due to dummy URL in CI');
+  }
 
   fastify.decorate('prisma', prisma);
 

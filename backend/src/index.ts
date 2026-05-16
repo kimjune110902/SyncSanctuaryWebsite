@@ -11,7 +11,7 @@ import sentryPlugin from './plugins/sentry.js';
 import authRoutes from './routes/auth.js';
 import accountRoutes from './routes/account.js';
 
-const fastify = Fastify({ logger });
+const fastify = Fastify({ loggerInstance: logger });
 
 fastify.register(cors, { origin: true, credentials: true });
 fastify.register(cookie);

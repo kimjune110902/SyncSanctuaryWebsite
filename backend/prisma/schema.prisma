@@ -43,7 +43,6 @@ model users {
   @@index([phone_number])
   @@index([email])
   @@index([google_id])
-  // We can't index a function lower(username) directly in Prisma schema, need to use raw SQL
   @@index([is_active])
   @@index([last_active_at(sort: Desc)])
 }
