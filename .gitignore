@@ -1,0 +1,13 @@
+node_modules
+backend/node_modules
+frontend/node_modules
+.next
+dist
+build
+playwright-report
+test-results
+*.js
+*.js.map
+*.d.ts
+*.d.ts.map
+!backend/prisma.config.js

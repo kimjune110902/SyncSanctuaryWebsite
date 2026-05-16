@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+
+}
+
+model users {
+  id                        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  username                  String    @unique @db.VarChar(32)
+  phone_number              String    @unique @db.VarChar(20)
+  email                     String?   @unique @db.VarChar(254)
+  password_hash             String?   @db.VarChar(255)
+  google_id                 String?   @unique @db.VarChar(255)
+  phone_verified            Boolean   @default(false)
+  email_verified            Boolean   @default(false)
+  avatar_url                String?   @db.VarChar(1024)
+  language                  String    @default("en") @db.VarChar(10)
+  country_code              String?   @db.VarChar(2)
+  created_at                DateTime  @default(now()) @db.Timestamptz
+  updated_at                DateTime  @default(now()) @updatedAt @db.Timestamptz
+  last_login_at             DateTime? @db.Timestamptz
+  last_active_at            DateTime? @db.Timestamptz
+  is_active                 Boolean   @default(true)
+  deleted_at                DateTime? @db.Timestamptz
+  deletion_requested_at     DateTime? @db.Timestamptz
+  role                      String    @default("user") @db.VarChar(20)
+  login_attempt_count       Int       @default(0) @db.SmallInt
+  locked_until              DateTime? @db.Timestamptz
+  failed_attempts_reset_at  DateTime? @db.Timestamptz
+  two_factor_enabled        Boolean   @default(false)
+  two_factor_secret         String?   @db.VarChar(64)
+  preferences               Json      @default("{}") @db.JsonB
+
+  refresh_tokens            refresh_tokens[]
+  email_verification_tokens email_verification_tokens[]
+  password_reset_tokens     password_reset_tokens[]
+  app_downloads             app_downloads[]
+  audit_log                 audit_log[]
+
+  @@index([phone_number])
+  @@index([email])
+  @@index([google_id])
+  @@index([is_active])
+  @@index([last_active_at(sort: Desc)])
+}
+
+model refresh_tokens {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  token_hash      String    @unique @db.VarChar(64)
+  user_id         String    @db.Uuid
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  expires_at      DateTime  @db.Timestamptz
+  last_used_at    DateTime? @db.Timestamptz
+  ip_address      String?   @db.Inet
+  user_agent      String?   @db.VarChar(512)
+  device_name     String?   @db.VarChar(128)
+  client_type     String    @default("web") @db.VarChar(20)
+  revoked         Boolean   @default(false)
+  revoked_at      DateTime? @db.Timestamptz
+  revoked_reason  String?   @db.VarChar(50)
+
+  user            users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token_hash])
+  @@index([expires_at])
+}
+
+model otp_codes {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone_number    String    @db.VarChar(20)
+  code_hash       String    @db.VarChar(64)
+  purpose         String    @db.VarChar(20)
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  expires_at      DateTime  @default(dbgenerated("NOW() + INTERVAL '10 minutes'")) @db.Timestamptz
+  attempts        Int       @default(0) @db.SmallInt
+  used            Boolean   @default(false)
+  ip_address      String?   @db.Inet
+
+  @@index([phone_number, purpose, used, expires_at])
+}
+
+model email_verification_tokens {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  token_hash      String    @unique @db.VarChar(64)
+  email           String    @db.VarChar(254)
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  expires_at      DateTime  @default(dbgenerated("NOW() + INTERVAL '24 hours'")) @db.Timestamptz
+  used            Boolean   @default(false)
+  used_at         DateTime? @db.Timestamptz
+
+  user            users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([token_hash])
+}
+
+model password_reset_tokens {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  token_hash      String    @unique @db.VarChar(64)
+  created_at      DateTime  @default(now()) @db.Timestamptz
+  expires_at      DateTime  @default(dbgenerated("NOW() + INTERVAL '15 minutes'")) @db.Timestamptz
+  used            Boolean   @default(false)
+  used_at         DateTime? @db.Timestamptz
+  ip_address      String?   @db.Inet
+
+  user            users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+}
+
+model sms_send_log {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  phone_number    String    @db.VarChar(20)
+  purpose         String    @db.VarChar(20)
+  sent_at         DateTime  @default(now()) @db.Timestamptz
+  ip_address      String?   @db.Inet
+  provider        String    @db.VarChar(20)
+  status          String    @default("sent") @db.VarChar(20)
+  cost_units      Int?      @db.SmallInt
+}
+
+model reserved_usernames {
+  username        String    @id @db.VarChar(32)
+  reason          String    @db.VarChar(50)
+  created_at      DateTime  @default(now()) @db.Timestamptz
+}
+
+model audit_log {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String?   @db.Uuid
+  event_type      String    @db.VarChar(50)
+  ip_address      String?   @db.Inet
+  user_agent      String?   @db.VarChar(512)
+  metadata        Json      @default("{}") @db.JsonB
+  created_at      DateTime  @default(now()) @db.Timestamptz
+
+  user            users?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id, created_at(sort: Desc)])
+  @@index([event_type, created_at(sort: Desc)])
+  @@index([ip_address, created_at(sort: Desc)])
+}
+
+model app_downloads {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id         String    @db.Uuid
+  platform        String    @db.VarChar(10)
+  arch            String    @db.VarChar(10)
+  version         String    @db.VarChar(20)
+  channel         String    @default("stable") @db.VarChar(10)
+  format          String    @db.VarChar(20)
+  ip_address      String?   @db.Inet
+  user_agent      String?   @db.VarChar(512)
+  downloaded_at   DateTime  @default(now()) @db.Timestamptz
+
+  user            users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, downloaded_at(sort: Desc)])
+  @@index([version, platform])
+}
+
+model app_releases {
+  id              String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  version         String    @db.VarChar(20)
+  channel         String    @default("stable") @db.VarChar(10)
+  platform        String    @db.VarChar(10)
+  arch            String    @db.VarChar(10)
+  format          String    @db.VarChar(20)
+  filename        String    @db.VarChar(255)
+  file_size_bytes BigInt
+  sha256_hash     String    @db.VarChar(64)
+  ed25519_sig     String    @db.VarChar(128)
+  download_url    String    @db.VarChar(1024)
+  release_notes   String?   @db.Text
+  min_os_version  String?   @db.VarChar(20)
+  is_mandatory    Boolean   @default(false)
+  published_at    DateTime  @default(now()) @db.Timestamptz
+  created_by      String?   @db.Uuid
+
+  @@unique([version, platform, arch, format])
+  @@index([channel, platform, arch, published_at(sort: Desc)])
+}

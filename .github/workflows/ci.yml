@@ -1,0 +1,46 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Use Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Backend Dependencies
+      run: cd backend && npm install
+
+    - name: Build Backend
+      run: cd backend && npx prisma generate && npx tsc
+
+    - name: Start Backend Services
+      run: |
+        cd backend
+        npm run start &
+      env:
+        PORT: 8080
+        DATABASE_URL: "postgresql://dummy"
+
+    - name: Install Frontend Dependencies
+      run: cd frontend && npm install
+
+    - name: Build Frontend
+      run: cd frontend && npm run build
+      env:
+        SENTRY_AUTH_TOKEN: "dummy"
+        SENTRY_SUPPRESS_GLOBAL_ERROR_HANDLER_FILE_WARNING: "1"
+        NEXT_PUBLIC_SENTRY_DSN: "dummy"
+
+    - name: Playwright Tests
+      run: cd frontend && npx playwright install chromium && npx playwright test --project=chromium
