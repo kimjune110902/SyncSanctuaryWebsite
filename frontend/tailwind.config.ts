@@ -1,0 +1,116 @@
+import type { Config } from "tailwindcss";
+
+const config: Config = {
+  darkMode: ["class", '[data-theme="dark"]'],
+  content: [
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        bg: {
+          base: "var(--color-bg-base)",
+          surface: "var(--color-bg-surface)",
+          "surface-raised": "var(--color-bg-surface-raised)",
+          muted: "var(--color-bg-muted)",
+          inverse: "var(--color-bg-inverse)",
+        },
+        brand: {
+          50: "var(--color-brand-50)",
+          100: "var(--color-brand-100)",
+          200: "var(--color-brand-200)",
+          300: "var(--color-brand-300)",
+          400: "var(--color-brand-400)",
+          500: "var(--color-brand-500)",
+          600: "var(--color-brand-600)",
+          700: "var(--color-brand-700)",
+          800: "var(--color-brand-800)",
+          900: "var(--color-brand-900)",
+          950: "var(--color-brand-950)",
+        },
+        text: {
+          primary: "var(--color-text-primary)",
+          secondary: "var(--color-text-secondary)",
+          tertiary: "var(--color-text-tertiary)",
+          inverse: "var(--color-text-inverse)",
+          brand: "var(--color-text-brand)",
+          danger: "var(--color-text-danger)",
+          warning: "var(--color-text-warning)",
+          success: "var(--color-text-success)",
+        },
+        border: {
+          default: "var(--color-border-default)",
+          strong: "var(--color-border-strong)",
+          focus: "var(--color-border-focus)",
+          danger: "var(--color-border-danger)",
+        },
+        status: {
+          success: {
+            bg: "var(--color-success-bg)",
+            text: "var(--color-success-text)",
+            border: "var(--color-success-border)",
+          },
+          warning: {
+            bg: "var(--color-warning-bg)",
+            text: "var(--color-warning-text)",
+            border: "var(--color-warning-border)",
+          },
+          danger: {
+            bg: "var(--color-danger-bg)",
+            text: "var(--color-danger-text)",
+            border: "var(--color-danger-border)",
+          },
+          info: {
+            bg: "var(--color-info-bg)",
+            text: "var(--color-info-text)",
+            border: "var(--color-info-border)",
+          },
+        },
+      },
+      fontFamily: {
+        display: ["Fraunces", "serif"],
+        body: ["Inter", "sans-serif"],
+        mono: ["JetBrains Mono", "monospace"],
+      },
+      spacing: {
+        "0": "var(--spacing-0)",
+        "1": "var(--spacing-1)",
+        "2": "var(--spacing-2)",
+        "3": "var(--spacing-3)",
+        "4": "var(--spacing-4)",
+        "5": "var(--spacing-5)",
+        "6": "var(--spacing-6)",
+        "8": "var(--spacing-8)",
+        "10": "var(--spacing-10)",
+        "12": "var(--spacing-12)",
+        "16": "var(--spacing-16)",
+        "20": "var(--spacing-20)",
+        "24": "var(--spacing-24)",
+        "32": "var(--spacing-32)",
+        "40": "var(--spacing-40)",
+        "48": "var(--spacing-48)",
+      },
+      borderRadius: {
+        none: "var(--radius-none)",
+        sm: "var(--radius-sm)",
+        md: "var(--radius-md)",
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-2xl)",
+        full: "var(--radius-full)",
+      },
+      boxShadow: {
+        xs: "var(--shadow-xs)",
+        sm: "var(--shadow-sm)",
+        md: "var(--shadow-md)",
+        lg: "var(--shadow-lg)",
+        xl: "var(--shadow-xl)",
+        "2xl": "var(--shadow-2xl)",
+      },
+    },
+  },
+  plugins: [],
+};
+export default config;

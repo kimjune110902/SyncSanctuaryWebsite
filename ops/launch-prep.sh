@@ -20,10 +20,4 @@ echo "4. Public Status Page"
 # Hosted via Statuspage.io or Instatus
 echo "  [x] Create status page and attach to status.syncsanctuary.app."
 
-echo "5. Load Testing"
-echo "  [x] Load testing script provided in ops/load-test.js. Ready to simulate 1000 concurrent connections using k6."
-
-echo "6. Penetration Testing"
-echo "  [x] Pre-launch pen testing environment prepared. Awaiting security audit team confirmation."
-
 echo "Launch Prep Checks Completed."
