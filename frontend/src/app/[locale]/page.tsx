@@ -2,10 +2,9 @@
 import React from 'react';
 import Navigation from '../../components/Navigation';
 import Footer from '../../components/Footer';
-import { useLocale } from 'next-intl';
+import { Link } from '../../navigation';
 
 export default function HomePage() {
-  const locale = useLocale() || 'en';
   return (
     <div className="min-h-screen bg-bg-base">
       <Navigation />
@@ -24,8 +23,8 @@ export default function HomePage() {
               SyncSanctuary brings AI-powered video editing, live slide control, real-time transcription, and professional streaming together in one suite — built specifically for church media teams.
             </p>
             <div className="flex space-x-4 items-center">
-              <a href={`/${locale}/download`} className="bg-brand-600 text-white px-8 py-4 rounded-md text-lg font-medium hover:bg-brand-700 transition shadow-lg shadow-brand-500/25">Download free</a>
-              <a href={`/${locale}/features`} className="border-2 border-border-strong text-text-primary hover:border-brand-600 hover:text-brand-600 px-8 py-4 rounded-md text-lg font-medium transition">Watch demo</a>
+              <Link href="/download" className="bg-brand-600 text-white px-8 py-4 rounded-md text-lg font-medium hover:bg-brand-700 transition shadow-lg shadow-brand-500/25">Download free</Link>
+              <Link href="/features" className="border-2 border-border-strong text-text-primary hover:border-brand-600 hover:text-brand-600 px-8 py-4 rounded-md text-lg font-medium transition">Watch demo</Link>
             </div>
             <p className="text-sm text-text-tertiary mt-8 flex items-center">
               <span className="flex mr-3">
@@ -67,7 +66,7 @@ export default function HomePage() {
                     <div className="w-12 h-12 bg-brand-100 text-brand-600 rounded-lg mb-6 flex items-center justify-center font-bold text-xl">{i+1}</div>
                     <h3 className="font-semibold text-xl mb-3 text-text-primary">{feature.title}</h3>
                     <p className="text-text-secondary text-sm leading-relaxed mb-6">{feature.desc}</p>
-                    <a href={`/${locale}/features`} className="text-brand-600 text-sm font-medium hover:text-brand-800 hover:underline inline-flex items-center">Learn more <span className="ml-1">→</span></a>
+                    <Link href="/features" className="text-brand-600 text-sm font-medium hover:text-brand-800 hover:underline inline-flex items-center">Learn more <span className="ml-1">→</span></Link>
                   </div>
                 ))}
              </div>
@@ -81,8 +80,8 @@ export default function HomePage() {
             <h2 className="font-display text-4xl md:text-5xl mb-6 leading-tight">Ready to transform your church&apos;s media production?</h2>
             <p className="text-brand-100 mb-10 text-lg leading-relaxed">Join thousands of church media teams who trust SyncSanctuary every Sunday.</p>
             <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
-              <a href={`/${locale}/download`} className="bg-white text-brand-800 px-8 py-4 rounded-md font-medium text-lg hover:bg-brand-50 transition shadow-lg w-full sm:w-auto">Download free — it&apos;s free to start</a>
-              <a href={`/${locale}/contact`} className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 rounded-md font-medium text-lg transition w-full sm:w-auto">Talk to our team</a>
+              <Link href="/download" className="bg-white text-brand-800 px-8 py-4 rounded-md font-medium text-lg hover:bg-brand-50 transition shadow-lg w-full sm:w-auto">Download free — it&apos;s free to start</Link>
+              <Link href="/contact" className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 rounded-md font-medium text-lg transition w-full sm:w-auto">Talk to our team</Link>
             </div>
           </div>
         </section>

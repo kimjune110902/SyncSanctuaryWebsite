@@ -1,25 +1,24 @@
 "use client";
 import React from 'react';
-import { useLocale } from 'next-intl';
+import { Link } from '../navigation';
 
 export default function Navigation() {
-  const locale = useLocale() || 'en';
   return (
     <nav className="h-16 bg-bg-surface border-b border-border-default sticky top-0 z-50 px-6 flex items-center justify-between">
       <div className="flex items-center">
-        <a href={`/${locale}`} className="font-display font-medium text-xl text-text-primary">
+        <Link href="/" className="font-display font-medium text-xl text-text-primary">
           SyncSanctuary
-        </a>
+        </Link>
       </div>
       <div className="hidden lg:flex items-center space-x-6">
-        <a href={`/${locale}/features`} className="text-sm font-medium text-text-secondary hover:text-text-primary">Features</a>
-        <a href={`/${locale}/download`} className="text-sm font-medium text-text-secondary hover:text-text-primary">Download</a>
-        <a href={`/${locale}/pricing`} className="text-sm font-medium text-text-secondary hover:text-text-primary">Pricing</a>
-        <a href={`/${locale}/support`} className="text-sm font-medium text-text-secondary hover:text-text-primary">Support</a>
+        <Link href="/features" className="text-sm font-medium text-text-secondary hover:text-text-primary">Features</Link>
+        <Link href="/download" className="text-sm font-medium text-text-secondary hover:text-text-primary">Download</Link>
+        <Link href="/pricing" className="text-sm font-medium text-text-secondary hover:text-text-primary">Pricing</Link>
+        <Link href="/support" className="text-sm font-medium text-text-secondary hover:text-text-primary">Support</Link>
       </div>
       <div className="flex items-center space-x-4">
-        <a href={`/${locale}/auth/login`} className="text-sm font-medium text-text-secondary hover:text-text-primary">Log in</a>
-        <a href={`/${locale}/auth/signup`} className="text-sm font-medium bg-brand-600 text-white px-4 py-2 rounded hover:bg-brand-700 transition">Get started</a>
+        <Link href="/auth/login" className="text-sm font-medium text-text-secondary hover:text-text-primary">Log in</Link>
+        <Link href="/auth/signup" className="text-sm font-medium bg-brand-600 text-white px-4 py-2 rounded hover:bg-brand-700 transition">Get started</Link>
       </div>
     </nav>
   );

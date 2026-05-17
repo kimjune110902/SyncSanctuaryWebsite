@@ -1,9 +1,8 @@
 "use client";
 import React from 'react';
-import { useLocale } from 'next-intl';
+import { Link } from '../navigation';
 
 export default function Footer() {
-  const locale = useLocale() || 'en';
   return (
     <footer className="bg-bg-inverse text-text-inverse pt-20 px-6 pb-10">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -14,27 +13,27 @@ export default function Footer() {
         <div>
           <h3 className="text-xs uppercase tracking-wider opacity-40 mb-4">Product</h3>
           <ul className="space-y-2 text-sm opacity-80">
-            <li><a href={`/${locale}/features`}>Features</a></li>
-            <li><a href={`/${locale}/download`}>Download</a></li>
-            <li><a href={`/${locale}/changelog`}>Changelog</a></li>
-            <li><a href={`/${locale}/pricing`}>Pricing</a></li>
+            <li><Link href="/features">Features</Link></li>
+            <li><Link href="/download">Download</Link></li>
+            <li><Link href="/changelog">Changelog</Link></li>
+            <li><Link href="/pricing">Pricing</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="text-xs uppercase tracking-wider opacity-40 mb-4">Company</h3>
           <ul className="space-y-2 text-sm opacity-80">
-            <li><a href={`/${locale}/about`}>About</a></li>
-            <li><a href={`/${locale}/blog`}>Blog</a></li>
-            <li><a href={`/${locale}/careers`}>Careers</a></li>
-            <li><a href={`/${locale}/contact`}>Contact</a></li>
+            <li><Link href="/about">About</Link></li>
+            <li><Link href="/blog">Blog</Link></li>
+            <li><Link href="/careers">Careers</Link></li>
+            <li><Link href="/contact">Contact</Link></li>
           </ul>
         </div>
         <div>
           <h3 className="text-xs uppercase tracking-wider opacity-40 mb-4">Legal</h3>
           <ul className="space-y-2 text-sm opacity-80">
-            <li><a href={`/${locale}/privacy`}>Privacy Policy</a></li>
-            <li><a href={`/${locale}/terms`}>Terms of Service</a></li>
-            <li><a href={`/${locale}/cookies`}>Cookie Policy</a></li>
+            <li><Link href="/privacy">Privacy Policy</Link></li>
+            <li><Link href="/terms">Terms of Service</Link></li>
+            <li><Link href="/cookies">Cookie Policy</Link></li>
           </ul>
         </div>
       </div>
