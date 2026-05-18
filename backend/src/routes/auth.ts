@@ -7,37 +7,47 @@ import { sendSMS } from '../utils/sms.js';
 import crypto from 'crypto';
 
 export default async function authRoutes(fastify: FastifyInstance) {
-  // 1. Send OTP for Signup
+  // 1. Send OTP for Signup (now accepts identifier)
   fastify.post('/signup/send-otp', async (request, reply) => {
     const schema = z.object({
-      phone_number: z.string(),
+      identifier: z.string(),
       locale: z.string().optional()
     });
 
     const body = schema.parse(request.body);
-    if (!/^\+[1-9]\d{7,14}$/.test(body.phone_number)) {
-      return reply.code(400).send({ error: 'INVALID_PHONE_FORMAT' });
+    let isEmail = body.identifier.includes('@');
+
+    if (!isEmail && !/^\+[1-9]\d{7,14}$/.test(body.identifier)) {
+      return reply.code(400).send({ error: 'INVALID_FORMAT' });
     }
 
-    const hourlyKey = `sms_rate:${body.phone_number}:hourly`;
+    const hourlyKey = `sms_rate:${body.identifier}:hourly`;
     const hourlyCount = await redis.incr(hourlyKey);
     if (hourlyCount === 1) await redis.expire(hourlyKey, 3600);
     if (hourlyCount > 3) return reply.code(429).send({ error: 'RATE_LIMITED', retry_after_seconds: 3600 });
 
-    const existingUser = await fastify.prisma.users.findUnique({
-      where: { phone_number: body.phone_number }
-    });
+    let existingUser;
+    if (isEmail) {
+      existingUser = await fastify.prisma.users.findUnique({ where: { email: body.identifier.toLowerCase() } });
+    } else {
+      existingUser = await fastify.prisma.users.findUnique({ where: { phone_number: body.identifier } });
+    }
 
     if (existingUser && existingUser.is_active) {
-      return reply.code(409).send({ error: 'PHONE_ALREADY_EXISTS' });
+      return reply.code(409).send({ error: isEmail ? 'EMAIL_ALREADY_EXISTS' : 'PHONE_ALREADY_EXISTS' });
     }
 
     const otp = crypto.randomInt(100000, 999999).toString();
     const hash = crypto.createHash('sha256').update(otp).digest('hex');
 
-    await redis.setex(`otp:${body.phone_number}:signup`, 600, JSON.stringify({ hash, attempts: 0 }));
+    await redis.setex(`otp:${body.identifier}:signup`, 600, JSON.stringify({ hash, attempts: 0 }));
 
-    await sendSMS(body.phone_number, `Your SyncSanctuary verification code is: ${otp}`);
+    if (isEmail) {
+      // Dummy send email
+      console.log(`Sending Email OTP ${otp} to ${body.identifier}`);
+    } else {
+      await sendSMS(body.identifier, `Your SyncSanctuary verification code is: ${otp}`);
+    }
 
     return reply.code(200).send({ success: true, resend_allowed_after_seconds: 60 });
   });
@@ -45,12 +55,12 @@ export default async function authRoutes(fastify: FastifyInstance) {
   // 2. Verify OTP
   fastify.post('/signup/verify-otp', async (request, reply) => {
     const schema = z.object({
-      phone_number: z.string(),
+      identifier: z.string(),
       otp: z.string()
     });
     const body = schema.parse(request.body);
 
-    const redisKey = `otp:${body.phone_number}:signup`;
+    const redisKey = `otp:${body.identifier}:signup`;
     const otpDataStr = await redis.get(redisKey);
 
     if (!otpDataStr) {
@@ -70,18 +80,29 @@ export default async function authRoutes(fastify: FastifyInstance) {
     }
 
     await redis.del(redisKey);
-    const phoneToken = generateAccessToken({ sub: body.phone_number, username: '', role: 'user', client_type: 'web' }, crypto.randomUUID());
+    const token = generateAccessToken({ sub: body.identifier, username: '', role: 'user', client_type: 'web' }, crypto.randomUUID());
 
-    return reply.code(200).send({ success: true, phone_verified_token: phoneToken });
+    return reply.code(200).send({ success: true, verified_token: token });
+  });
+
+  // Check username
+  fastify.get('/signup/check-username', async (request, reply) => {
+     const schema = z.object({ username: z.string() });
+     const query = schema.parse(request.query);
+
+     const existing = await fastify.prisma.users.findUnique({ where: { username: query.username } });
+     if (existing) {
+         return reply.code(200).send({ available: false, reason: 'taken' });
+     }
+     return reply.code(200).send({ available: true });
   });
 
   // 3. Create Account
   fastify.post('/signup/create-account', async (request, reply) => {
     const schema = z.object({
-      phone_verified_token: z.string(),
+      verified_token: z.string(),
       username: z.string().min(3).max(32),
       password: z.string().min(10),
-      email: z.string().email().optional().nullable(),
       locale: z.string().optional(),
       consent: z.any().optional(),
       client_type: z.string().optional()
@@ -89,24 +110,27 @@ export default async function authRoutes(fastify: FastifyInstance) {
 
     const body = schema.parse(request.body);
 
-    let phoneNumber = '';
+    let identifier = '';
     try {
-       const decoded = verifyAccessToken(body.phone_verified_token);
-       phoneNumber = decoded.sub;
+       const decoded = verifyAccessToken(body.verified_token);
+       identifier = decoded.sub;
     } catch {
-       return reply.code(401).send({ error: 'PHONE_TOKEN_INVALID' });
+       return reply.code(401).send({ error: 'TOKEN_INVALID' });
     }
 
     const passwordHash = await hashPassword(body.password);
 
     try {
+      const isEmail = identifier.includes('@');
+
       const user = await fastify.prisma.users.create({
         data: {
           username: body.username,
-          phone_number: phoneNumber,
-          email: body.email,
+          phone_number: isEmail ? null : identifier,
+          email: isEmail ? identifier.toLowerCase() : null,
           password_hash: passwordHash,
-          phone_verified: true,
+          phone_verified: !isEmail,
+          email_verified: isEmail,
           language: body.locale || 'en',
           preferences: body.consent || {}
         }
