@@ -46,6 +46,10 @@ export async function sendSMS(to: string, text: string): Promise<boolean> {
     }
   } catch (error) {
     console.error("SMS Send Error:", error);
+    if (process.env.DEV_MODE === "true") {
+      console.log(`[DEV MODE] Simulated SMS to ${to}: ${text}`);
+      return true;
+    }
     return false;
   }
 }

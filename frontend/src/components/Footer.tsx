@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { Link } from '../navigation';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function Footer() {
   return (
@@ -37,9 +38,12 @@ export default function Footer() {
           </ul>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs opacity-40">
+      <div className="max-w-7xl mx-auto mt-16 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs opacity-40 gap-4">
         <p>© 2024 SyncSanctuary. All rights reserved.</p>
-        <p>Made with ♥ for the church community</p>
+        <div className="flex flex-col items-center gap-2">
+            <LanguageSwitcher />
+            <p>Made with ♥ for the church community</p>
+        </div>
       </div>
     </footer>
   );

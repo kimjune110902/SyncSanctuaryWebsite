@@ -1,20 +1,20 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { useAuthStore } from '../../../../store/auth';
 import { Link } from '../../../../navigation';
-import { parsePhoneNumber, getCountries, getCountryCallingCode, AsYouType } from 'libphonenumber-js';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 
 export default function SignupPage() {
   const [step, setStep] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [phoneVerifiedToken, setPhoneVerifiedToken] = useState<string | null>(null);
   const [identifierType, setIdentifierType] = useState<'phone' | 'email'>('phone');
-  const [countryCode, setCountryCode] = useState('KR');
   const [timer, setTimer] = useState(0);
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
 
-  const { register, handleSubmit, watch, setValue } = useForm({ shouldUnregister: false });
+  const { register, handleSubmit, watch, setValue, control } = useForm({ shouldUnregister: false });
   const { login } = useAuthStore();
 
   const username = watch('username');
@@ -47,21 +47,12 @@ export default function SignupPage() {
     }
   }, [username, step]);
 
-  const handlePhoneFormat = (e: React.ChangeEvent<HTMLInputElement>) => {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const formatter = new AsYouType(countryCode as any);
-      const formatted = formatter.input(e.target.value);
-      setValue('phone_number', formatted, { shouldValidate: true });
-  }
-
   const onSubmit = async (data: Record<string, unknown>) => {
     if (step === 1) {
       try {
         let payloadIdentifier = data.email;
         if(identifierType === 'phone') {
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           const parsed = parsePhoneNumber(data.phone_number as string, countryCode as any);
-           payloadIdentifier = parsed ? parsed.format('E.164') : data.phone_number;
+           payloadIdentifier = data.phone_number;
         }
 
         const res = await fetch('/api/v1/auth/signup/send-otp', {
@@ -87,9 +78,7 @@ export default function SignupPage() {
       try {
         let payloadIdentifier = data.email;
         if(identifierType === 'phone') {
-           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-           const parsed = parsePhoneNumber(data.phone_number as string, countryCode as any);
-           payloadIdentifier = parsed ? parsed.format('E.164') : data.phone_number;
+           payloadIdentifier = data.phone_number;
         }
 
         const res = await fetch('/api/v1/auth/signup/verify-otp', {
@@ -220,21 +209,18 @@ export default function SignupPage() {
                   <div>
                     <label className="block text-sm font-medium mb-2 text-text-primary">Phone Number</label>
                     <div className="flex">
-                      <select
-                        value={countryCode}
-                        onChange={(e) => {
-                          setCountryCode(e.target.value);
-                          setValue('phone_number', '');
-                        }}
-                        className="border-1.5 border-border-default border-r-0 rounded-l-md p-3 text-text-primary bg-bg-muted outline-none w-32 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15"
-                      >
-                        {getCountries().map(c => <option key={c} value={c}>{c} (+{getCountryCallingCode(c)})</option>)}
-                      </select>
-                      <input
-                        {...register('phone_number')}
-                        onChange={handlePhoneFormat}
-                        className="border-1.5 border-border-default focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 rounded-r-md w-full p-3 text-text-primary bg-bg-surface outline-none transition"
-                        placeholder="10 1234 5678"
+                      <Controller
+                        name="phone_number"
+                        control={control}
+                        rules={{ required: true }}
+                        render={({ field }) => (
+                          <PhoneInput
+                            {...field}
+                            international
+                            defaultCountry="KR"
+                            className="border-1.5 border-border-default focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15 rounded-md w-full p-3 text-text-primary bg-bg-surface outline-none transition"
+                          />
+                        )}
                       />
                     </div>
                     <p className="text-xs text-text-secondary mt-3">We&apos;ll send you a verification code to ensure you&apos;re a real human.</p>
